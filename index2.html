@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>風船ふくらましゲーム</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(45deg, #87CEEB, #FFB6C1, #98FB98);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .title {
+            font-size: 2.5em;
+            color: #FF6B6B;
+            text-shadow: 3px 3px 0 #FFD93D;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .instruction {
+            font-size: 1.5em;
+            color: #4ECDC4;
+            text-shadow: 2px 2px 0 #FFD93D;
+            margin-bottom: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px 25px;
+            border-radius: 25px;
+            border: 3px solid #FF6B6B;
+        }
+
+        .word-to-say {
+            font-size: 2em;
+            color: #FF1493;
+            font-weight: bold;
+            margin: 10px 0;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .game-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .balloon {
+            width: 100px;
+            height: 130px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: #8B4513;
+        }
+
+        .character {
+            font-size: 3em;
+            animation: characterAppear 1s ease;
+        }
+
+        @keyframes characterAppear {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+
+        .sparkles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .sparkle {
+            position: absolute;
+            font-size: 2em;
+            animation: sparkle 1s ease forwards;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1) rotate(360deg) translate(50px, -50px); opacity: 0; }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .mic-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-family: inherit;
+        }
+
+        .mic-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .mic-button.listening {
+            background: linear-gradient(45deg, #32CD32, #00CED1);
+            animation: pulse 1s infinite;
+        }
+
+        .volume-meter {
+            width: 300px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            border: 3px solid #FF6B6B;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .volume-level {
+            height: 100%;
+            background: linear-gradient(90deg, #32CD32, #FFD700, #FF6B6B);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 12px;
+        }
+
+        .volume-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            color: #333;
+            z-index: 2;
+        }
+
+        .pop-animation {
+            animation: pop 0.5s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .reset-button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background: linear-gradient(45deg, #FFD93D, #FF9500);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            font-family: inherit;
+        }
+
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #FF6B6B;
+            animation: confetti-fall 2s ease forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">🎈 風船ふくらましゲーム 🎈</div>
+    
+    <div class="instruction">
+        マイクボタンを押して、下の言葉を言ってね！
+        <div class="word-to-say" id="wordToSay">「ふー」</div>
+    </div>
+
+    <div class="volume-meter">
+        <div class="volume-level" id="volumeLevel"></div>
+        <div class="volume-text">声の大きさメーター</div>
+    </div>
+
+    <div class="game-container">
+        <div class="balloon" id="balloon" style="background: linear-gradient(45deg, #FF6B6B, #FF69B4);">
+            🎈
+        </div>
+        <div class="sparkles" id="sparkles"></div>
+    </div>
+
+    <div class="controls">
+        <button class="mic-button" id="micButton">🎤 マイクを使う</button>
+        <button class="reset-button" id="resetButton">🔄 新しい風船</button>
+    </div>
+
+    <script>
+        class BalloonGame {
+            constructor() {
+                this.balloon = document.getElementById('balloon');
+                this.micButton = document.getElementById('micButton');
+                this.resetButton = document.getElementById('resetButton');
+                this.volumeLevel = document.getElementById('volumeLevel');
+                this.sparkles = document.getElementById('sparkles');
+                this.wordToSay = document.getElementById('wordToSay');
+                
+                this.isListening = false;
+                this.audioContext = null;
+                this.analyser = null;
+                this.microphone = null;
+                this.balloonSize = 1;
+                this.maxSize = 8; // 割れるまでをより長く
+                this.currentWord = 0;
+                this.isPopped = false;
+                
+                this.words = ['「あー」', '「おー」', '「うー」', '「えー」', '「いー」'];
+                this.characters = ['🐻', '🐰', '🐸', '🦁', '🐼', '🐯', '🐨', '🦊', '🐷', '🐸'];
+                this.balloonColors = [
+                    'linear-gradient(45deg, #FF6B6B, #FF69B4)',
+                    'linear-gradient(45deg, #4ECDC4, #45B7D1)', 
+                    'linear-gradient(45deg, #96CEB4, #FFEAA7)',
+                    'linear-gradient(45deg, #DDA0DD, #FF69B4)',
+                    'linear-gradient(45deg, #FFD93D, #FF9500)'
+                ];
+                
+                this.setupEventListeners();
+                this.updateWordToSay();
+            }
+
+            setupEventListeners() {
+                this.micButton.addEventListener('click', () => this.toggleListening());
+                this.resetButton.addEventListener('click', () => this.resetBalloon());
+            }
+
+            updateWordToSay() {
+                this.wordToSay.textContent = this.words[this.currentWord];
+            }
+
+            async toggleListening() {
+                if (!this.isListening) {
+                    try {
+                        await this.startListening();
+                    } catch (error) {
+                        alert('マイクの使用許可が必要です。ブラウザの設定を確認してください。');
+                    }
+                } else {
+                    this.stopListening();
+                }
+            }
+
+            async startListening() {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    } 
+                });
+                
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.analyser = this.audioContext.createAnalyser();
+                this.microphone = this.audioContext.createMediaStreamSource(stream);
+                
+                this.analyser.fftSize = 256;
+                this.analyser.smoothingTimeConstant = 0.8;
+                this.microphone.connect(this.analyser);
+                
+                this.isListening = true;
+                this.micButton.textContent = '🔴 聞いてるよ！';
+                this.micButton.classList.add('listening');
+                
+                this.listenForSound();
+            }
+
+            stopListening() {
+                if (this.audioContext) {
+                    this.audioContext.close();
+                    this.audioContext = null;
+                }
+                
+                this.isListening = false;
+                this.micButton.textContent = '🎤 マイクを使う';
+                this.micButton.classList.remove('listening');
+                this.volumeLevel.style.width = '0%';
+            }
+
+            listenForSound() {
+                if (!this.isListening) return;
+                
+                const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(dataArray);
+                
+                const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                const volume = Math.min(100, (average / 128) * 100);
+                
+                this.volumeLevel.style.width = `${volume}%`;
+                
+                // 感度をさらに大幅に下げる（雑音対策強化）
+                if (average > 50 && !this.isPopped) { // 閾値を50に上昇
+                    this.inflateBalloon();
+                    this.playInflateSound();
+                }
+                
+                requestAnimationFrame(() => this.listenForSound());
+            }
+
+            inflateBalloon() {
+                if (this.isPopped) return;
+                
+                this.balloonSize += 0.05; // より細かく膨らむ
+                const scale = Math.min(this.balloonSize, this.maxSize);
+                
+                this.balloon.style.transform = `scale(${scale})`;
+                
+                if (this.balloonSize >= this.maxSize) {
+                    this.popBalloon();
+                }
+            }
+
+            popBalloon() {
+                this.isPopped = true;
+                this.balloon.classList.add('pop-animation');
+                
+                this.playPopSound();
+                this.createSparkles();
+                this.createConfetti();
+                
+                setTimeout(() => {
+                    const character = this.characters[Math.floor(Math.random() * this.characters.length)];
+                    this.balloon.innerHTML = `<div class="character">${character}</div>`;
+                    this.balloon.style.background = 'transparent';
+                    this.balloon.classList.remove('pop-animation');
+                }, 250);
+                
+                // 2秒後にリセット
+                setTimeout(() => {
+                    this.resetBalloon();
+                }, 2000);
+            }
+
+            createSparkles() {
+                for (let i = 0; i < 8; i++) {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.textContent = '✨';
+                    sparkle.style.left = Math.random() * 100 + '%';
+                    sparkle.style.top = Math.random() * 100 + '%';
+                    sparkle.style.animationDelay = Math.random() * 0.5 + 's';
+                    this.sparkles.appendChild(sparkle);
+                    
+                    setTimeout(() => sparkle.remove(), 1000);
+                }
+            }
+
+            createConfetti() {
+                const confettiContainer = document.createElement('div');
+                confettiContainer.className = 'confetti';
+                document.body.appendChild(confettiContainer);
+                
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FFD93D'];
+                
+                for (let i = 0; i < 50; i++) {
+                    const confettiPiece = document.createElement('div');
+                    confettiPiece.className = 'confetti-piece';
+                    confettiPiece.style.left = Math.random() * 100 + '%';
+                    confettiPiece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confettiPiece.style.animationDelay = Math.random() * 0.3 + 's';
+                    confettiContainer.appendChild(confettiPiece);
+                }
+                
+                setTimeout(() => confettiContainer.remove(), 2000);
+            }
+
+            resetBalloon() {
+                this.balloonSize = 1;
+                this.isPopped = false;
+                this.currentWord = (this.currentWord + 1) % this.words.length;
+                
+                this.balloon.style.transform = 'scale(1)';
+                this.balloon.style.background = this.balloonColors[this.currentWord];
+                this.balloon.innerHTML = '🎈';
+                
+                this.updateWordToSay();
+                this.sparkles.innerHTML = '';
+                
+                // リセット後も音声認識を継続する
+                if (this.isListening) {
+                    // 少し遅延を入れてから再開
+                    setTimeout(() => {
+                        if (this.isListening && this.audioContext && this.audioContext.state === 'running') {
+                            this.listenForSound();
+                        }
+                    }, 100);
+                }
+                
+                this.playResetSound();
+            }
+
+            playInflateSound() {
+                // Web Audio APIで「ぷくー」音を生成
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // ぷくーっという音の周波数設定
+                    oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(150, this.audioContext.currentTime + 0.2);
+                    
+                    // 音量の設定
+                    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.1, this.audioContext.currentTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.2);
+                }
+                
+                // 視覚的フィードバックも残す
+                this.balloon.style.filter = 'brightness(1.2)';
+                setTimeout(() => {
+                    this.balloon.style.filter = 'brightness(1)';
+                }, 100);
+            }
+
+            playPopSound() {
+                // ポップ音も生成
+                if (this.audioContext && this.audioContext.state === 'running') {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    // ポップ音の周波数設定
+                    oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, this.audioContext.currentTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    
+                    oscillator.type = 'square';
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                }
+                
+                // 視覚的エフェクトで音の代替
+                document.body.style.background = 'linear-gradient(45deg, #FFD93D, #FF6B6B, #4ECDC4)';
+                setTimeout(() => {
+                    document.body.style.background = '';
+                }, 200);
+            }
+
+            playResetSound() {
+                // 新しい風船の登場を視覚的に表現
+                this.balloon.style.animation = 'bounce 0.5s ease';
+                setTimeout(() => {
+                    this.balloon.style.animation = '';
+                }, 500);
+            }
+        }
+
+        // ゲーム開始
+        window.addEventListener('load', () => {
+            new BalloonGame();
+        });
+    </script>
+</body>
+</html>

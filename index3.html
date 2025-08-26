@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>風船ふくらましゲーム</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            text-align: center;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            color: #FF6B6B;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .balloon-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 60vh;
+        }
+
+        .balloon {
+            width: 100px;
+            height: 120px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            background: linear-gradient(135deg, #FF69B4 0%, #FFB6C1 30%, #FFC0CB 70%, #FFCCCB 100%);
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 15px 25px rgba(0,0,0,0.2),
+                inset -10px -10px 20px rgba(0,0,0,0.1),
+                inset 10px 10px 20px rgba(255,255,255,0.3);
+            cursor: pointer;
+        }
+
+        .balloon::before {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 25%;
+            width: 25%;
+            height: 35%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            border-radius: 50%;
+            transform: rotate(-20deg);
+        }
+
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 15px solid #FF69B4;
+        }
+
+        .balloon-string {
+            position: absolute;
+            bottom: -65px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 50px;
+            background: linear-gradient(180deg, #8B4513, #A0522D);
+            border-radius: 1px;
+        }
+
+        .balloon.growing {
+            animation: bounce 0.3s ease;
+        }
+
+        @keyframes bounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(-1px) rotate(-0.5deg); }
+            100% { transform: translateX(1px) rotate(0.5deg); }
+        }
+
+        .character {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 8rem;
+            animation: characterAppear 1s ease forwards;
+            z-index: 10;
+        }
+
+        @keyframes characterAppear {
+            0% { 
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.2) rotate(180deg);
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        .sparkles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .sparkle {
+            position: absolute;
+            color: #FFD700;
+            font-size: 2rem;
+            animation: sparkle 1s ease forwards;
+        }
+
+        @keyframes sparkle {
+            0% { 
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% { 
+                transform: scale(1) rotate(360deg) translateY(-50px);
+                opacity: 0;
+            }
+        }
+
+        .instructions {
+            font-size: 1.5rem;
+            color: #4169E1;
+            margin: 20px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            font-weight: bold;
+        }
+
+        .sensitivity-control {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 1.1rem;
+            min-width: 200px;
+            display: none;
+        }
+
+        .sensitivity-control label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .sensitivity-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #32CD32, #FFD700, #FF6347);
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .sensitivity-value {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .mic-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .mic-active {
+            background: rgba(144,238,144,0.9);
+            color: #006400;
+        }
+
+        .clap-counter {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #FF6B6B;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .clap-animation {
+            animation: clapBounce 0.3s ease;
+        }
+
+        @keyframes clapBounce {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.2); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        .volume-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .volume-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #32CD32, #FFD700, #FF6347);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 10px;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.7;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .cloud1 {
+            width: 80px;
+            height: 40px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .cloud2 {
+            width: 60px;
+            height: 30px;
+            top: 20%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        
+        <div class="title">🎈 風船ふくらましゲーム 🎈</div>
+        
+        <div class="sensitivity-control" id="sensitivityControl">
+            <label for="sensitivitySlider">🎚️ 音量感度</label>
+            <input type="range" id="sensitivitySlider" class="sensitivity-slider" min="40" max="90" value="70">
+            <div class="sensitivity-value" id="sensitivityValue">普通</div>
+        </div>
+        
+        <div class="mic-status" id="micStatus">🎤 マイクを準備中...</div>
+        
+        <div class="instructions">
+            大きな声を出してね！風船がふくらむよ〜 📢🗣️
+        </div>
+        
+        <div class="balloon-container">
+            <div class="balloon" id="balloon">
+                <div class="balloon-string"></div>
+            </div>
+            <div class="sparkles" id="sparkles"></div>
+        </div>
+        
+        <div class="clap-counter" id="clapCounter">
+            👏 拍手: 0回
+        </div>
+        
+        <div class="volume-bar">
+            <div class="volume-fill" id="volumeFill"></div>
+        </div>
+    </div>
+
+    <script>
+        let balloonSize = 1;
+        let maxSize = 4;
+        let isListening = false;
+        let audioContext;
+        let analyser;
+        let microphone;
+        let dataArray;
+        let animationId;
+        let sensitivity = 70; // デフォルトの感度をかなり鈍感に設定
+        let clapCount = 0;
+        let lastClapTime = 0;
+        let clapThreshold = 85; // 拍手検出の閾値をかなり高く設定
+
+        const balloon = document.getElementById('balloon');
+        const micStatus = document.getElementById('micStatus');
+        const volumeFill = document.getElementById('volumeFill');
+        const sparkles = document.getElementById('sparkles');
+        const sensitivityControl = document.getElementById('sensitivityControl');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sensitivityValue = document.getElementById('sensitivityValue');
+        const clapCounter = document.getElementById('clapCounter');
+
+        const characters = ['🐰', '🐱', '🐸', '🐧', '🦄', '🌟', '🎈', '🎉', '🌈', '🦋'];
+
+        // マイクの初期化
+        async function initializeMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                
+                analyser.fftSize = 256;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                
+                isListening = true;
+                micStatus.textContent = '🎤 準備完了！大きな声を出してね';
+                micStatus.classList.add('mic-active');
+                
+                // 感度調整コントロールを表示
+                sensitivityControl.style.display = 'block';
+                setupSensitivityControl();
+                
+                startListening();
+            } catch (err) {
+                console.log('マイクを使わずにゲームを開始します');
+                setupClickMode();
+            }
+        }
+
+        // 感度調整の設定
+        function setupSensitivityControl() {
+            sensitivitySlider.addEventListener('input', (e) => {
+                sensitivity = parseInt(e.target.value);
+                updateSensitivityDisplay();
+            });
+            
+            updateSensitivityDisplay();
+        }
+
+        function updateSensitivityDisplay() {
+            let level = '普通';
+            if (sensitivity <= 50) level = '高感度';
+            else if (sensitivity <= 70) level = '普通';
+            else if (sensitivity <= 80) level = '低感度';
+            else level = 'とても鈍感';
+            
+            sensitivityValue.textContent = level;
+        }
+
+        // クリックモードのセットアップ
+        function setupClickMode() {
+            micStatus.textContent = '👆 タップして遊ぼう！';
+            micStatus.classList.add('mic-active');
+            document.querySelector('.instructions').innerHTML = '風船をタップしてね！ふくらむよ〜 👆<br><small>連続でタップするともっと楽しい♪</small>';
+            
+            // 風船をクリック可能にする
+            balloon.addEventListener('click', handleClick);
+            balloon.style.cursor = 'pointer';
+            
+            // 拍手カウンターを非表示
+            clapCounter.style.display = 'none';
+            
+            // 音量バーを隠す
+            document.querySelector('.volume-bar').style.display = 'none';
+            
+            // 自動でちょっとずつ大きくなるモードも追加
+            startAutoGrow();
+        }
+
+        // 音声レベルの監視
+        function startListening() {
+            function checkAudioLevel() {
+                if (!isListening) return;
+                
+                analyser.getByteFrequencyData(dataArray);
+                
+                let sum = 0;
+                let maxVolume = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                    maxVolume = Math.max(maxVolume, dataArray[i]);
+                }
+                
+                const average = sum / dataArray.length;
+                const volume = Math.min(100, (average / 128) * 100);
+                const peakVolume = (maxVolume / 255) * 100;
+                
+                volumeFill.style.width = volume + '%';
+                
+                // 拍手検出（急激な音量上昇を検出）- より厳しい条件
+                const currentTime = Date.now();
+                if (peakVolume > clapThreshold && currentTime - lastClapTime > 800 && volume > 60) {
+                    detectClap();
+                    lastClapTime = currentTime;
+                }
+                
+                // 調整可能な感度で風船を大きくする
+                if (volume > sensitivity) {
+                    growBalloon();
+                }
+                
+                animationId = requestAnimationFrame(checkAudioLevel);
+            }
+            
+            checkAudioLevel();
+        }
+
+        // 拍手検出
+        function detectClap() {
+            clapCount++;
+            updateClapDisplay();
+            
+            // 拍手のアニメーション
+            clapCounter.classList.add('clap-animation');
+            setTimeout(() => {
+                clapCounter.classList.remove('clap-animation');
+            }, 300);
+            
+            // 拍手音を再生
+            playClapSound();
+            
+            // 拍手でも風船が少し大きくなる
+            growBalloon();
+        }
+
+        // 拍手表示の更新
+        function updateClapDisplay() {
+            clapCounter.textContent = `👏 拍手: ${clapCount}回`;
+        }
+
+        // 拍手音を生成
+        function playClapSound() {
+            if (!audioContext) return;
+            
+            // 短い高音を2回鳴らして拍手音を模倣
+            for (let i = 0; i < 2; i++) {
+                setTimeout(() => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(1000 + Math.random() * 500, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.05);
+                    
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.05);
+                }, i * 50);
+            }
+        }
+
+        // クリック処理
+        function handleClick() {
+            growBalloon();
+            
+            // クリックした時の楽しいエフェクト
+            balloon.style.transform = `scale(${balloonSize}) rotate(${Math.random() * 20 - 10}deg)`;
+            setTimeout(() => {
+                balloon.style.transform = `scale(${balloonSize})`;
+            }, 200);
+        }
+
+        // 自動成長モード
+        function startAutoGrow() {
+            setInterval(() => {
+                if (balloonSize < maxSize && Math.random() > 0.85) {
+                    balloonSize += 0.02;
+                    balloon.style.transform = `scale(${balloonSize})`;
+                    
+                    // 色を徐々に変える
+                    const progress = Math.min((balloonSize - 1) / (maxSize - 1), 1);
+                    const hue = progress * 120;
+                    const saturation = 70 + progress * 15;
+                    balloon.style.background = `linear-gradient(135deg, 
+                        hsl(${320 + hue}, ${saturation}%, 70%) 0%, 
+                        hsl(${320 + hue}, ${saturation}%, 80%) 30%, 
+                        hsl(${320 + hue}, ${saturation}%, 85%) 70%, 
+                        hsl(${320 + hue}, ${saturation}%, 90%) 100%)`;
+                    
+                    // サイズに応じてプルプル震える
+                    if (balloonSize > maxSize * 0.8) {
+                        balloon.style.animation = 'shake 0.1s infinite alternate';
+                    }
+                    
+                    if (balloonSize >= maxSize) {
+                        popBalloon();
+                    }
+                }
+            }, 3000);
+        }
+
+        // 風船を大きくする
+        function growBalloon() {
+            balloonSize += 0.04;
+            balloon.style.transform = `scale(${balloonSize})`;
+            balloon.classList.add('growing');
+            
+            // 色を徐々に変える
+            const progress = Math.min((balloonSize - 1) / (maxSize - 1), 1);
+            const hue = progress * 120;
+            const saturation = 70 + progress * 15;
+            balloon.style.background = `linear-gradient(135deg, 
+                hsl(${320 + hue}, ${saturation}%, 70%) 0%, 
+                hsl(${320 + hue}, ${saturation}%, 80%) 30%, 
+                hsl(${320 + hue}, ${saturation}%, 85%) 70%, 
+                hsl(${320 + hue}, ${saturation}%, 90%) 100%)`;
+            balloon.style.boxShadow = `
+                0 ${15 * balloonSize}px ${25 * balloonSize}px rgba(0,0,0,0.2),
+                inset -10px -10px 20px rgba(0,0,0,0.1),
+                inset 10px 10px 20px rgba(255,255,255,0.3)`;
+            
+            // サイズに応じてプルプル震える
+            if (balloonSize > maxSize * 0.8) {
+                balloon.style.animation = 'shake 0.1s infinite alternate';
+            }
+            
+            setTimeout(() => {
+                balloon.classList.remove('growing');
+            }, 300);
+            
+            // 最大サイズに達したら風船を割る
+            if (balloonSize >= maxSize) {
+                popBalloon();
+            }
+        }
+
+        // 風船を割る
+        function popBalloon() {
+            // ポップ音を再生
+            playPopSound();
+            
+            // 風船を隠す
+            balloon.style.display = 'none';
+            
+            // キラキラエフェクト
+            createSparkles();
+            
+            // ランダムなキャラクターを表示
+            const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
+            const characterDiv = document.createElement('div');
+            characterDiv.className = 'character';
+            characterDiv.textContent = randomCharacter;
+            document.querySelector('.balloon-container').appendChild(characterDiv);
+            
+            // 2秒後にリセット
+            setTimeout(resetGame, 2000);
+        }
+
+        // ポップ音を生成
+        function playPopSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // キラキラエフェクト
+        function createSparkles() {
+            const sparkleSymbols = ['✨', '⭐', '🌟', '💫'];
+            
+            for (let i = 0; i < 12; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = sparkleSymbols[Math.floor(Math.random() * sparkleSymbols.length)];
+                
+                const angle = (i / 12) * 2 * Math.PI;
+                const radius = 100 + Math.random() * 50;
+                
+                sparkle.style.left = (50 + Math.cos(angle) * radius / window.innerWidth * 100) + '%';
+                sparkle.style.top = (50 + Math.sin(angle) * radius / window.innerHeight * 100) + '%';
+                sparkle.style.animationDelay = Math.random() * 0.3 + 's';
+                
+                sparkles.appendChild(sparkle);
+                
+                setTimeout(() => {
+                    if (sparkle.parentNode) {
+                        sparkle.parentNode.removeChild(sparkle);
+                    }
+                }, 1000);
+            }
+        }
+
+        // ゲームリセット
+        function resetGame() {
+            balloonSize = 1;
+            balloon.style.transform = 'scale(1)';
+            balloon.style.animation = '';
+            balloon.style.background = `linear-gradient(135deg, #FF69B4 0%, #FFB6C1 30%, #FFC0CB 70%, #FFCCCB 100%)`;
+            balloon.style.boxShadow = `
+                0 15px 25px rgba(0,0,0,0.2),
+                inset -10px -10px 20px rgba(0,0,0,0.1),
+                inset 10px 10px 20px rgba(255,255,255,0.3)`;
+            balloon.style.display = 'block';
+            
+            // キャラクターを削除
+            const characters = document.querySelectorAll('.character');
+            characters.forEach(char => char.remove());
+            
+            // 新しい最大サイズを設定
+            maxSize = 4 + Math.random() * 2;
+        }
+
+        // ゲーム開始
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                initializeMicrophone();
+            }, 500);
+        });
+
+        // ページが隠れた時の処理
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                isListening = false;
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            } else if (audioContext && audioContext.state !== 'suspended') {
+                isListening = true;
+                startListening();
+            }
+        });
+    </script>
+</body>
+</html>

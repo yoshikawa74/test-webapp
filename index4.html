@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>なつのおはなばたけ</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru:wght@400&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 30%, #90EE90 100%);
+            font-family: 'Kosugi Maru', sans-serif;
+            overflow: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 15px 30px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #2E8B57;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(45deg, #FF69B4, #FFB6C1);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            font-family: 'Kosugi Maru', sans-serif;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button.active {
+            background: linear-gradient(45deg, #32CD32, #98FB98);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .flower-counter {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF1493;
+            margin-bottom: 10px;
+        }
+
+        .volume-indicator {
+            width: 100px;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .volume-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #32CD32, #FFD700, #FF4500);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .instruction {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 400px;
+            z-index: 100;
+        }
+
+        .game-area {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flower {
+            position: absolute;
+            font-size: 40px;
+            animation: bloom 1s ease-out;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        @keyframes bloom {
+            0% {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.3) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .sparkle {
+            position: absolute;
+            font-size: 20px;
+            color: gold;
+            pointer-events: none;
+            animation: sparkle 1.5s ease-out forwards;
+            z-index: 20;
+        }
+
+        @keyframes sparkle {
+            0% { opacity: 0; transform: scale(0) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+            100% { opacity: 0; transform: scale(0.8) rotate(360deg); }
+        }
+
+        .butterfly, .bird {
+            position: absolute;
+            font-size: 25px;
+            animation: fly 8s infinite linear;
+            z-index: 15;
+        }
+
+        @keyframes fly {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(calc(100vw + 50px)); }
+        }
+
+        .sun {
+            position: fixed;
+            top: 80px;
+            right: 80px;
+            font-size: 60px;
+            animation: rotate 10s infinite linear;
+            z-index: 5;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .clouds {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .cloud {
+            position: absolute;
+            color: white;
+            font-size: 40px;
+            opacity: 0.7;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+
+        .grass {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to top, #228B22, transparent);
+            z-index: 1;
+        }
+
+        .sound-effect {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #FF69B4;
+            pointer-events: none;
+            animation: soundPop 0.8s ease-out forwards;
+            z-index: 50;
+        }
+
+        @keyframes soundPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>🌻 なつのおはなばたけ 🌻</h1>
+    </div>
+
+    <div class="controls">
+        <button onclick="toggleListening()" id="micBtn">🎤 こえをだそう</button>
+        <button onclick="resetGarden()" id="resetBtn">🔄 あたらしいはたけ</button>
+    </div>
+
+    <div class="status">
+        <div class="flower-counter">おはな: <span id="flowerCount">0</span>こ</div>
+        <div id="micStatus">じゅんび OK!</div>
+        <div class="volume-indicator">
+            <div class="volume-bar" id="volumeBar"></div>
+        </div>
+    </div>
+
+    <div class="instruction">
+        <div style="font-size: 20px; color: #2E8B57; margin-bottom: 10px;">
+            🎤 おおきなこえで おはなを さかせよう！
+        </div>
+        <div style="font-size: 14px; color: #666;">
+            マイクボタンをおして、「わあ」「きゃー」などと いってみてね
+        </div>
+    </div>
+
+    <div class="sun">☀️</div>
+    <div class="grass"></div>
+    <div class="clouds" id="clouds"></div>
+    <div class="game-area" id="gameArea"></div>
+
+    <script>
+        let audioContext;
+        let mediaStream;
+        let analyser;
+        let isListening = false;
+        let flowerCount = 0;
+        let animationId;
+        let lastFlowerTime = 0;
+        
+        const flowers = ['🌻', '🌺', '🌸', '🌼', '🌷', '🌹', '💐', '🏵️'];
+        const butterflies = ['🦋', '🦋'];
+        const birds = ['🐦', '🐤', '🕊️'];
+        const sparkleEffects = ['✨', '⭐', '💫', '🌟', '💖'];
+        const soundTexts = ['ぱっ！', 'きれい！', 'わあ！', 'すてき！'];
+        
+        const flowerCountEl = document.getElementById('flowerCount');
+        const micBtn = document.getElementById('micBtn');
+        const micStatus = document.getElementById('micStatus');
+        const volumeBar = document.getElementById('volumeBar');
+        const gameArea = document.getElementById('gameArea');
+
+        // 雲を生成
+        function createClouds() {
+            const cloudsContainer = document.getElementById('clouds');
+            for (let i = 0; i < 6; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.textContent = '☁️';
+                cloud.style.top = Math.random() * 200 + 'px';
+                cloud.style.animationDelay = Math.random() * 15 + 's';
+                cloud.style.animationDuration = (Math.random() * 5 + 15) + 's';
+                cloudsContainer.appendChild(cloud);
+            }
+        }
+
+        async function toggleListening() {
+            if (!isListening) {
+                try {
+                    micStatus.textContent = 'マイクじゅんび中...';
+                    micStatus.style.color = '#FFA500';
+                    
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false,
+                            sampleRate: 44100
+                        } 
+                    });
+                    
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(mediaStream);
+                    analyser = audioContext.createAnalyser();
+                    
+                    analyser.fftSize = 512;
+                    analyser.smoothingTimeConstant = 0.3;
+                    source.connect(analyser);
+                    
+                    isListening = true;
+                    micBtn.textContent = '🔴 とめる';
+                    micBtn.classList.add('active');
+                    micStatus.textContent = '🎤 きいてるよ！';
+                    micStatus.style.color = '#32CD32';
+                    
+                    monitorAudio();
+                    
+                } catch (error) {
+                    console.error('マイクエラー:', error);
+                    micStatus.textContent = 'マイクエラー';
+                    micStatus.style.color = '#FF6B6B';
+                    alert('マイクが つかえません。ブラウザで マイクを ゆるしてください。');
+                }
+            } else {
+                stopListening();
+            }
+        }
+
+        function monitorAudio() {
+            if (!isListening) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+            
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / bufferLength;
+            const volume = Math.min(100, (average / 128) * 100);
+            
+            volumeBar.style.width = volume + '%';
+            
+            // 雑音フィルター: より高い閾値で確実な声のみ検出
+            const currentTime = Date.now();
+            if (average > 25 && currentTime - lastFlowerTime > 800) { // 800ms間隔で制限
+                bloomFlower();
+                lastFlowerTime = currentTime;
+            }
+            
+            animationId = requestAnimationFrame(monitorAudio);
+        }
+
+        function stopListening() {
+            isListening = false;
+            micBtn.textContent = '🎤 こえをだそう';
+            micBtn.classList.remove('active');
+            micStatus.textContent = 'ていし中';
+            micStatus.style.color = '#666';
+            volumeBar.style.width = '0%';
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+        }
+
+        function bloomFlower() {
+            flowerCount++;
+            flowerCountEl.textContent = flowerCount;
+            
+            // ランダムな位置に花を咲かせる
+            const flower = document.createElement('div');
+            flower.className = 'flower';
+            flower.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+            
+            // 画面下部70%の範囲に配置
+            flower.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+            flower.style.bottom = Math.random() * (window.innerHeight * 0.7) + 100 + 'px';
+            
+            gameArea.appendChild(flower);
+            
+            // キラキラエフェクト
+            setTimeout(() => createSparkles(flower), 200);
+            
+            // 音の効果表示
+            showSoundEffect();
+            
+            // 一定数ごとに蝶や鳥を飛ばす
+            if (flowerCount % 5 === 0) {
+                setTimeout(() => addButterfly(), 500);
+            }
+            if (flowerCount % 8 === 0) {
+                setTimeout(() => addBird(), 1000);
+            }
+            
+            // 花をクリックで削除できる
+            flower.addEventListener('click', function() {
+                flower.remove();
+            });
+        }
+
+        function createSparkles(flower) {
+            const rect = flower.getBoundingClientRect();
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.textContent = sparkleEffects[Math.floor(Math.random() * sparkleEffects.length)];
+                    sparkle.style.left = rect.left + Math.random() * 60 - 10 + 'px';
+                    sparkle.style.top = rect.top + Math.random() * 60 - 10 + 'px';
+                    document.body.appendChild(sparkle);
+                    
+                    setTimeout(() => sparkle.remove(), 1500);
+                }, i * 100);
+            }
+        }
+
+        function showSoundEffect() {
+            const soundEffect = document.createElement('div');
+            soundEffect.className = 'sound-effect';
+            soundEffect.textContent = soundTexts[Math.floor(Math.random() * soundTexts.length)];
+            document.body.appendChild(soundEffect);
+            
+            setTimeout(() => soundEffect.remove(), 800);
+        }
+
+        function addButterfly() {
+            const butterfly = document.createElement('div');
+            butterfly.className = 'butterfly';
+            butterfly.textContent = butterflies[Math.floor(Math.random() * butterflies.length)];
+            butterfly.style.top = Math.random() * (window.innerHeight - 200) + 100 + 'px';
+            butterfly.style.left = '-50px';
+            butterfly.style.animationDuration = (Math.random() * 3 + 6) + 's';
+            gameArea.appendChild(butterfly);
+            
+            setTimeout(() => butterfly.remove(), 10000);
+        }
+
+        function addBird() {
+            const bird = document.createElement('div');
+            bird.className = 'bird';
+            bird.textContent = birds[Math.floor(Math.random() * birds.length)];
+            bird.style.top = Math.random() * 200 + 50 + 'px';
+            bird.style.left = '-50px';
+            bird.style.animationDuration = (Math.random() * 2 + 5) + 's';
+            gameArea.appendChild(bird);
+            
+            setTimeout(() => bird.remove(), 8000);
+        }
+
+        function resetGarden() {
+            // 全ての花を削除
+            const flowers = document.querySelectorAll('.flower');
+            flowers.forEach(flower => flower.remove());
+            
+            // 蝶と鳥を削除
+            const creatures = document.querySelectorAll('.butterfly, .bird');
+            creatures.forEach(creature => creature.remove());
+            
+            flowerCount = 0;
+            flowerCountEl.textContent = flowerCount;
+            
+            stopListening();
+        }
+
+        // 初期化
+        createClouds();
+        
+        // ページを離れる時にマイクを停止
+        window.addEventListener('beforeunload', stopListening);
+        
+        // 画面クリックでも花を咲かせる（バックアップ機能）
+        gameArea.addEventListener('click', function(e) {
+            if (e.target === gameArea) {
+                bloomFlower();
+            }
+        });
+    </script>
+</body>
+</html>

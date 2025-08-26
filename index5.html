@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動物記憶ゲーム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .title {
+            font-size: 2.5em;
+            color: #FF6B6B;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .score {
+            font-size: 1.5em;
+            color: #4ECDC4;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        
+        .animals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+            justify-items: center;
+        }
+        
+        .animal-button {
+            width: 120px;
+            height: 120px;
+            border: 4px solid #FFD93D;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .animal-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+        
+        .animal-button.flash {
+            animation: flash 0.6s ease-in-out;
+            transform: scale(1.15);
+        }
+        
+        .animal-button.correct {
+            animation: correct 0.5s ease-in-out;
+        }
+        
+        .animal-button.wrong {
+            animation: wrong 0.5s ease-in-out;
+        }
+        
+        @keyframes flash {
+            0%, 100% { 
+                background: white; 
+                border-color: #FFD93D;
+            }
+            50% { 
+                background: #FFD93D; 
+                border-color: #FFA500;
+                box-shadow: 0 0 20px #FFD93D;
+            }
+        }
+        
+        @keyframes correct {
+            0%, 100% { transform: scale(1); }
+            50% { 
+                transform: scale(1.2); 
+                background: #90EE90;
+                border-color: #32CD32;
+            }
+        }
+        
+        @keyframes wrong {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); background: #FFB6C1; }
+            75% { transform: translateX(10px); background: #FFB6C1; }
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .message {
+            font-size: 1.3em;
+            margin: 20px 0;
+            min-height: 40px;
+            font-weight: bold;
+        }
+        
+        .success {
+            color: #32CD32;
+        }
+        
+        .error {
+            color: #FF4444;
+        }
+        
+        .sparkles {
+            position: absolute;
+            pointer-events: none;
+            font-size: 2em;
+            animation: sparkle 1s ease-out forwards;
+        }
+        
+        @keyframes sparkle {
+            0% { 
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% { 
+                transform: scale(1) rotate(180deg);
+                opacity: 0;
+            }
+        }
+        
+        .celebration {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            animation: celebrate 2s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes celebrate {
+            0% { 
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">🎮 動物記憶ゲーム 🎮</h1>
+        <div class="score">スコア: <span id="score">0</span></div>
+        
+        <div class="animals-grid" id="animalsGrid">
+            <div class="animal-button" data-animal="0">🐶</div>
+            <div class="animal-button" data-animal="1">🐱</div>
+            <div class="animal-button" data-animal="2">🐰</div>
+            <div class="animal-button" data-animal="3">🐸</div>
+            <div class="animal-button" data-animal="4">🐼</div>
+            <div class="animal-button" data-animal="5">🦁</div>
+        </div>
+        
+        <button class="start-button" onclick="startGame()">ゲームスタート！</button>
+        <div class="message" id="message">動物たちが光る順番を覚えてね！</div>
+    </div>
+
+    <script>
+        let gameSequence = [];
+        let playerSequence = [];
+        let score = 0;
+        let isPlaying = false;
+        let isShowingSequence = false;
+        
+        const animals = document.querySelectorAll('.animal-button');
+        const messageEl = document.getElementById('message');
+        const scoreEl = document.getElementById('score');
+        
+        // 効果音を作る関数（Web Audio API）
+        function playSound(frequency, duration, type = 'sine') {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        function createSparkles(element) {
+            const rect = element.getBoundingClientRect();
+            const sparkleEmojis = ['✨', '⭐', '🌟', '💫'];
+            
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkles';
+                    sparkle.textContent = sparkleEmojis[Math.floor(Math.random() * sparkleEmojis.length)];
+                    sparkle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                    sparkle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                    document.body.appendChild(sparkle);
+                    
+                    setTimeout(() => sparkle.remove(), 1000);
+                }, i * 100);
+            }
+        }
+        
+        function showCelebration() {
+            const celebration = document.createElement('div');
+            celebration.className = 'celebration';
+            celebration.textContent = '🎉 やったね！ 🎉';
+            document.querySelector('.game-container').appendChild(celebration);
+            
+            setTimeout(() => celebration.remove(), 2000);
+        }
+        
+        function startGame() {
+            score = 0;
+            scoreEl.textContent = score;
+            gameSequence = [];
+            isPlaying = true;
+            messageEl.textContent = '動物たちをよく見てね！';
+            messageEl.className = 'message';
+            
+            nextRound();
+        }
+        
+        function nextRound() {
+            playerSequence = [];
+            
+            // 新しい動物をシーケンスに追加（最大3つまで）
+            if (gameSequence.length < 3) {
+                const randomAnimal = Math.floor(Math.random() * 6);
+                gameSequence.push(randomAnimal);
+            }
+            
+            showSequence();
+        }
+        
+        async function showSequence() {
+            isShowingSequence = true;
+            messageEl.textContent = `${gameSequence.length}つの動物を覚えてね！`;
+            
+            // 少し待ってからシーケンスを表示
+            await sleep(1000);
+            
+            for (let i = 0; i < gameSequence.length; i++) {
+                await sleep(600);
+                const animalIndex = gameSequence[i];
+                const animalButton = document.querySelector(`[data-animal="${animalIndex}"]`);
+                
+                animalButton.classList.add('flash');
+                playSound(440 + animalIndex * 100, 0.3);
+                
+                await sleep(600);
+                animalButton.classList.remove('flash');
+            }
+            
+            isShowingSequence = false;
+            messageEl.textContent = '今度は君の番だよ！順番にタッチしてね！';
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        animals.forEach(animal => {
+            animal.addEventListener('click', () => {
+                if (!isPlaying || isShowingSequence) return;
+                
+                const animalIndex = parseInt(animal.getAttribute('data-animal'));
+                playerSequence.push(animalIndex);
+                
+                // 正解チェック
+                const currentIndex = playerSequence.length - 1;
+                if (playerSequence[currentIndex] === gameSequence[currentIndex]) {
+                    // 正解の効果
+                    animal.classList.add('correct');
+                    playSound(523, 0.2); // C5
+                    createSparkles(animal);
+                    
+                    setTimeout(() => animal.classList.remove('correct'), 500);
+                    
+                    // 全部正解した場合
+                    if (playerSequence.length === gameSequence.length) {
+                        score += 10;
+                        scoreEl.textContent = score;
+                        messageEl.textContent = '素晴らしい！ 🎉';
+                        messageEl.className = 'message success';
+                        
+                        showCelebration();
+                        playSound(659, 0.3); // E5
+                        
+                        if (gameSequence.length === 3) {
+                            // 3つ全部覚えたらクリア！
+                            setTimeout(() => {
+                                messageEl.textContent = '🏆 パーフェクト！君は記憶の達人だ！ 🏆';
+                                isPlaying = false;
+                            }, 1500);
+                        } else {
+                            setTimeout(() => {
+                                nextRound();
+                            }, 1500);
+                        }
+                    }
+                } else {
+                    // 間違いの効果
+                    animal.classList.add('wrong');
+                    playSound(200, 0.5, 'sawtooth');
+                    
+                    setTimeout(() => animal.classList.remove('wrong'), 500);
+                    
+                    messageEl.textContent = '惜しい！もう一回やってみよう！';
+                    messageEl.className = 'message error';
+                    isPlaying = false;
+                    
+                    setTimeout(() => {
+                        messageEl.textContent = '動物たちが光る順番を覚えてね！';
+                        messageEl.className = 'message';
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
